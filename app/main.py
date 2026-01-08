@@ -6,14 +6,13 @@ import sys
 
 app = FastAPI(title="Taxi KPI Search Engine")
 
-# --- Config ---
-# Try 'qdrant' first (docker), then 'localhost' (local)
+
 QDRANT_HOST = "qdrant" 
 QDRANT_PORT = 6333
 MODEL_PATH = "/data/tfidf_model.pkl"
 COLLECTION_NAME = "taxi_kpis"
 
-# Global state
+
 state = {
     "vectorizer": None,
     "client": None,
@@ -26,7 +25,7 @@ def startup_event():
     """Attempts to load resources but DOES NOT CRASH if they fail."""
     global state
     
-    # 1. Try Loading Model
+    
     if os.path.exists(MODEL_PATH):
         try:
             state["vectorizer"] = joblib.load(MODEL_PATH)
@@ -38,9 +37,9 @@ def startup_event():
         print(f"--- Warning: Model file not found at {MODEL_PATH}")
         state["error"] = f"File not found: {MODEL_PATH}. Did you run embed_and_index.py?"
 
-    # 2. Try Connecting to Qdrant
+   
     try:
-        # Fallback logic for host
+       
         try:
             client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, timeout=2)
             client.get_collections() # Test connection
@@ -62,7 +61,7 @@ def startup_event():
 
 @app.get("/")
 def health_check():
-    # This endpoint tells you EXACTLY what is broken
+    
     return {
         "status": state["status"],
         "error_details": state["error"],
@@ -78,10 +77,10 @@ def search_kpis(query: str):
             detail=f"System not ready. Error: {state['error']}"
         )
 
-    # Transform query
+    
     vector = state["vectorizer"].transform([query]).toarray()[0].tolist()
 
-    # Qdrant search (NEW API)
+    
     response = state["client"].query_points(
         collection_name=COLLECTION_NAME,
         query=vector,
@@ -102,4 +101,5 @@ def search_kpis(query: str):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
