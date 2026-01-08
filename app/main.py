@@ -69,7 +69,7 @@ def health_check():
         "qdrant_connected": state["client"] is not None
     }
 
-@app.get("/search")
+@app.get("/ask")
 def search_kpis(query: str):
     if state["status"] != "ready":
         raise HTTPException(
@@ -103,3 +103,4 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
